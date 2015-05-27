@@ -1,12 +1,11 @@
 
 package com.aug.utils.gif;
 
-import java.io.FileNotFoundException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GifPlayer {
     public interface GifPlayListener {
@@ -32,21 +31,17 @@ public class GifPlayer {
 
     public boolean play(String filePath, boolean startPlayNow) {
         boolean canPlay = false;
+        byte [] data = null;
         try {
-            gifDecoder = new RealTimeGifDecoder(filePath);
+//            gifDecoder = new RealTimeGifDecoder(filePath);
+            data = FileUtils.getFileBytesFrom(filePath);
+            gifDecoder = new RealTimeGifDecoder(data);
             gifDecoder.setLoop(mLoopPlay);
             canPlay = gifDecoder.isGif();
             mDecodeStatus = canPlay ? IS_GIF_YES : IS_GIF_NO;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             mDecodeStatus = IS_GIF_FILE_NOT_FOUND;
-        } finally {
-            if (!canPlay) {
-                if (gifDecoder != null) {
-                    gifDecoder.onDestroy();
-                    gifDecoder = null;
-                }
-            }
         }
 
         if (canPlay) {
@@ -58,6 +53,16 @@ public class GifPlayer {
             };
             if (startPlayNow) {
                 start();
+            }
+        } else {
+            if (gifDecoder != null) {
+                gifDecoder.onDestroy();
+                gifDecoder = null;
+            }
+            
+            if (data != null) {
+                Bitmap bmp = FileUtils.decodeBitmap(data);
+                mGifPlayListener.onNextBitmapReady(bmp);
             }
         }
         return canPlay;
