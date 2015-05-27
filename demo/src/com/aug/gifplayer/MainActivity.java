@@ -52,7 +52,10 @@ public class MainActivity extends Activity implements GifPlayListener {
             
             @Override
             public void onClick(View v) {
-                fileId = 2 - (fileId + 1) % 2;
+                fileId++;
+                if (fileId > 3) {
+                    fileId = 1;
+                }
                 if (mGifPlayer != null) {
                     mGifPlayer.stop();
                     playFile(fileId);
