@@ -39,6 +39,10 @@ public class GifPlayer {
     }
 
     public boolean play(byte[] data, boolean startPlayNow) {
+        if (isPlaying()) {
+            stop();
+        }
+        
         boolean canPlay = false;
         if (data != null) {
             try {
