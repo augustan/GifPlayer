@@ -4,6 +4,7 @@ package com.aug.utils.gif;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 
@@ -28,10 +29,29 @@ public class GifPlayer {
 
     private RealTimeGifDecoder gifDecoder;
     private Handler mainThreadHandler = null;
+    private Handler subThreadHandler = null;
+    private HandlerThread subHandlerThread = null;
+    
     private AtomicBoolean mIsPlaying = new AtomicBoolean(false);
     private GifPlayListener mGifPlayListener;
     private boolean mLoopPlay = true;
     private boolean mIsLooped = false;
+    
+    private class BitmapReadyHandle implements Runnable {
+        
+        private Bitmap image;
+        
+        private BitmapReadyHandle(Bitmap image) {
+            this.image = image;
+        }
+
+        @Override
+        public void run() {
+            if (mGifPlayListener != null) {
+                mGifPlayListener.onNextBitmapReady(image);
+            }
+        }
+    }
 
     public boolean play(String filePath, boolean startPlayNow) {
         byte[] data = null;
@@ -65,14 +85,7 @@ public class GifPlayer {
         }
 
         if (canPlay) {
-            mainThreadHandler = new Handler(Looper.getMainLooper()) {
-                @Override
-                public void handleMessage(Message msg) {
-                    if (msg.what == GIF_FRAME_READY_MSG) {
-                        showNextGifFrame();
-                    }
-                }
-            };
+            initThreadHandle();
             if (startPlayNow) {
                 start();
             }
@@ -92,7 +105,7 @@ public class GifPlayer {
 
     public void start() {
         if (mDecodeStatus == IS_GIF_YES && !mIsPlaying.getAndSet(true)) {
-            showNextGifFrame();
+            subThreadHandler.sendEmptyMessage(GIF_FRAME_READY_MSG);
         }
     }
 
@@ -104,6 +117,35 @@ public class GifPlayer {
         return mDecodeStatus != IS_GIF_NO;
     }
 
+    private void initThreadHandle() {
+        mainThreadHandler = new Handler(Looper.getMainLooper());
+        
+        subHandlerThread = new HandlerThread("non-ui thread");
+        subHandlerThread.start();
+        subThreadHandler = new Handler(subHandlerThread.getLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == GIF_FRAME_READY_MSG) {
+                    showNextGifFrame();
+                }
+            }
+        };
+    }
+    
+    private void destroyThreadHandle() {
+        if (mainThreadHandler != null) {
+            mainThreadHandler = null;
+        }
+        if (subHandlerThread != null) {
+            subHandlerThread.quit();
+            subHandlerThread = null;
+        }
+        if (subThreadHandler != null) {
+            subThreadHandler.removeMessages(GIF_FRAME_READY_MSG);
+            subThreadHandler = null;
+        }
+    }
+    
     private void reset() {
         mIsPlaying.set(false);
         mIsLooped = false;
@@ -112,10 +154,8 @@ public class GifPlayer {
             gifDecoder.onDestroy();
             gifDecoder = null;
         }
-        if (mainThreadHandler != null) {
-            mainThreadHandler.removeMessages(GIF_FRAME_READY_MSG);
-            mainThreadHandler = null;
-        }
+
+        destroyThreadHandle();
     }
 
     private void showNextGifFrame() {
@@ -133,11 +173,9 @@ public class GifPlayer {
             }
 
             // mIsLooped = true后，调用这里时，image已经是第一帧了
-            if (mGifPlayListener != null) {
-                mGifPlayListener.onNextBitmapReady(frame.image);
-            }
-
-            mainThreadHandler.sendEmptyMessageDelayed(GIF_FRAME_READY_MSG, frame.delay);
+            mainThreadHandler.post(new BitmapReadyHandle(frame.image));
+            subThreadHandler.sendEmptyMessageDelayed(GIF_FRAME_READY_MSG, frame.delay);
+            
             mIsLooped = gifDecoder.prepareNextBitmap();
         } else {
             if (mGifPlayListener != null) {
