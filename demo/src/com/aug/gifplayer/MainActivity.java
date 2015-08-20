@@ -67,61 +67,63 @@ public class MainActivity extends Activity implements GifPlayListener {
     }
     
     private void playFile(int id) {
-        copyTestGifFile(id);
-        
-        String gifFile = getCacheRootDir() + "/" + id + ".gif";
+//        copyTestGifFile(id);
+
+//        String gifFile = getCacheRootDir() + "/" + id + ".gif";
+        String gifFile = id + ".gif";
         mGifPlayer.setGifPlayListener(this);
 //        mGifPlayer.setLoopPlay(false);
-        mGifPlayer.play(gifFile, true);
+//        mGifPlayer.play(gifFile, true);
+        mGifPlayer.playInAssects(this, gifFile, true);
     }
     
-    private void copyTestGifFile(int id) {
-        String from = id + ".gif";
-        String to = getCacheRootDir() + "/" + from;
-
-        File toFile = new File(to);
-        InputStream source = null;
-        OutputStream destination = null;
-        if (!toFile.exists()) {
-            try {
-                toFile.getParentFile().mkdirs();
-
-                source = getAssets().open(from);
-                destination = new FileOutputStream(toFile);
-                byte[] buffer = new byte[10240];
-                int nread = 0;
-
-                while ((nread = source.read(buffer)) != -1) {
-                    if (nread == 0) {
-                        nread = source.read();
-                        if (nread < 0) {
-                            break;
-                        }
-                        destination.write(nread);
-                        continue;
-                    }
-                    destination.write(buffer, 0, nread);
-                }
-                destination.close();
-            } catch (IOException e) {
-            } finally {
-                if (source != null) {
-                    try {
-                        source.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (destination != null) {
-                    try {
-                        destination.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
+//    private void copyTestGifFile(int id) {
+//        String from = id + ".gif";
+//        String to = getCacheRootDir() + "/" + from;
+//
+//        File toFile = new File(to);
+//        InputStream source = null;
+//        OutputStream destination = null;
+//        if (!toFile.exists()) {
+//            try {
+//                toFile.getParentFile().mkdirs();
+//
+//                source = getAssets().open(from);
+//                destination = new FileOutputStream(toFile);
+//                byte[] buffer = new byte[10240];
+//                int nread = 0;
+//
+//                while ((nread = source.read(buffer)) != -1) {
+//                    if (nread == 0) {
+//                        nread = source.read();
+//                        if (nread < 0) {
+//                            break;
+//                        }
+//                        destination.write(nread);
+//                        continue;
+//                    }
+//                    destination.write(buffer, 0, nread);
+//                }
+//                destination.close();
+//            } catch (IOException e) {
+//            } finally {
+//                if (source != null) {
+//                    try {
+//                        source.close();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                if (destination != null) {
+//                    try {
+//                        destination.close();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public void onNextBitmapReady(Bitmap bmp) {
@@ -146,8 +148,8 @@ public class MainActivity extends Activity implements GifPlayListener {
         i = 0;
     }
 
-    public static String getCacheRootDir() {
-        return android.os.Environment.getExternalStorageDirectory() + "/aug/gif";
-    }
+//    public static String getCacheRootDir() {
+//        return android.os.Environment.getExternalStorageDirectory() + "/aug/gif";
+//    }
 
 }

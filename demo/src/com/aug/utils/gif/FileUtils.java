@@ -1,6 +1,7 @@
 
 package com.aug.utils.gif;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -17,6 +18,16 @@ public class FileUtils {
     public static byte[] getFileBytesFrom(String filePath) {
         return getFileBytesFrom(new File(filePath));
     }
+
+    public static byte[] getFileBytesFromAssets(Context c, String filePath) {
+        InputStream stream = null;
+        try {
+            stream = c.getAssets().open(filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return getFileBytesFrom(stream);
+    }
     
     public static Bitmap decodeBitmap(byte [] data) {
         Bitmap bm = BitmapFactory.decodeStream(new ByteArrayInputStream(data));
@@ -28,12 +39,24 @@ public class FileUtils {
         if (file == null) {
             return data;
         }
-
-        FileInputStream stream = null;
-        ByteArrayOutputStream out = null;
+        
         try {
-            int len = (int) file.length();
-            stream = new FileInputStream(file);
+            data = getFileBytesFrom(new FileInputStream(file));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+
+    public static byte[] getFileBytesFrom(InputStream stream) {
+        byte[] data = null;
+        if (stream == null) {
+            return data;
+        }
+        
+        ByteArrayOutputStream out = null;
+        int len = 4096 * 4;
+        try {
             out = new ByteArrayOutputStream(len);
             byte[] b = new byte[len];
             int n;
@@ -49,7 +72,7 @@ public class FileUtils {
         }
         return data;
     }
-
+    
     public static void closeInStream(InputStream s) {
         if (s != null) {
             try {
